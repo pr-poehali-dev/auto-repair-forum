@@ -59,6 +59,34 @@ export default function Index() {
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
 
   const [activeTag, setActiveTag] = useState("Все");
+  const [chipTopics, setChipTopics] = useState(CHIPTUNING_TOPICS);
+
+  const [showNewTopic, setShowNewTopic] = useState(false);
+  const [newTopicTitle, setNewTopicTitle] = useState("");
+  const [newTopicText, setNewTopicText] = useState("");
+  const [newTopicTag, setNewTopicTag] = useState("Stage 1");
+  const [newTopicError, setNewTopicError] = useState("");
+
+  const handleCreateTopic = () => {
+    setNewTopicError("");
+    if (!currentUser) { setShowNewTopic(false); setShowAuth(true); return; }
+    if (!newTopicTitle.trim()) { setNewTopicError("Введите заголовок темы"); return; }
+    if (!newTopicText.trim()) { setNewTopicError("Напишите текст сообщения"); return; }
+    setChipTopics(prev => [{
+      id: Date.now(),
+      title: newTopicTitle.trim(),
+      author: currentUser,
+      time: "только что",
+      replies: 0,
+      views: 1,
+      hot: false,
+      tag: newTopicTag,
+    }, ...prev]);
+    setNewTopicTitle(""); setNewTopicText(""); setNewTopicTag("Stage 1"); setNewTopicError("");
+    setShowNewTopic(false);
+    setActiveTag("Все");
+  };
+
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authName, setAuthName] = useState("");
@@ -85,6 +113,26 @@ export default function Index() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+  };
+
+  const handleCreateTopic = () => {
+    if (!currentUser) { setShowNewTopic(false); setShowAuth(true); return; }
+    if (!newTopicTitle.trim() || !newTopicText.trim()) return;
+    setChipTopics(prev => [{
+      id: Date.now(),
+      title: newTopicTitle.trim(),
+      author: currentUser,
+      time: "только что",
+      replies: 0,
+      views: 1,
+      hot: false,
+      tag: newTopicTag,
+    }, ...prev]);
+    setNewTopicTitle("");
+    setNewTopicText("");
+    setNewTopicTag("Stage 1");
+    setShowNewTopic(false);
+    setActiveTag("Все");
   };
 
   const handleSendMessage = () => {
@@ -401,7 +449,7 @@ export default function Index() {
                 </h2>
                 <p className="text-muted-foreground text-xs mt-0.5">Прошивки, Stage 1/2/3, удаление EGR, DPF, Adblue</p>
               </div>
-              <button className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 flex items-center gap-2" style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}>
+              <button onClick={() => setShowNewTopic(true)} className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 flex items-center gap-2" style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}>
                 <Icon name="Plus" size={15} />
                 <span className="hidden sm:inline">Новая тема</span>
               </button>
@@ -440,7 +488,7 @@ export default function Index() {
 
             {/* Темы */}
             <div className="space-y-2">
-              {CHIPTUNING_TOPICS.filter(t => activeTag === "Все" || t.tag === activeTag).map(topic => (
+              {chipTopics.filter(t => activeTag === "Все" || t.tag === activeTag).map(topic => (
                 <div key={topic.id} className="glass-card rounded-xl p-4 hover-lift transition-all cursor-pointer group">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -469,7 +517,7 @@ export default function Index() {
                 </div>
               ))}
 
-              {CHIPTUNING_TOPICS.filter(t => activeTag === "Все" || t.tag === activeTag).length === 0 && (
+              {chipTopics.filter(t => activeTag === "Все" || t.tag === activeTag).length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Icon name="Search" size={32} className="mx-auto mb-3 opacity-30" />
                   <p className="text-sm">Тем по этому тегу пока нет</p>
@@ -477,7 +525,7 @@ export default function Index() {
               )}
             </div>
 
-            <button className="w-full glass-card rounded-xl py-3 text-sm text-orange-400 hover:bg-orange-500/10 transition-all flex items-center justify-center gap-2">
+            <button onClick={() => setShowNewTopic(true)} className="w-full glass-card rounded-xl py-3 text-sm text-orange-400 hover:bg-orange-500/10 transition-all flex items-center justify-center gap-2">
               <Icon name="Plus" size={16} />
               Создать тему в Чип-тюнинге
             </button>
@@ -717,6 +765,97 @@ export default function Index() {
                   Забыли пароль?
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Модалка: Создать тему */}
+      {showNewTopic && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowNewTopic(false); }}
+        >
+          <div className="w-full max-w-lg rounded-2xl p-6 animate-scale-in" style={{ background: "hsl(220,18%,11%)", border: "1px solid rgba(249,115,22,0.25)", boxShadow: "0 0 60px rgba(249,115,22,0.1)" }}>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="font-oswald text-2xl font-bold text-foreground flex items-center gap-2">
+                  <Icon name="Cpu" size={20} className="text-orange-400" />
+                  Новая тема
+                </h2>
+                <p className="text-muted-foreground text-xs mt-0.5">Раздел: Чип-тюнинг</p>
+              </div>
+              <button onClick={() => setShowNewTopic(false)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
+                <Icon name="X" size={18} />
+              </button>
+            </div>
+
+            {!currentUser && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4" style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.25)" }}>
+                <Icon name="AlertCircle" size={16} className="text-orange-400 shrink-0" />
+                <p className="text-sm text-orange-300">Для создания темы нужно <button onClick={() => { setShowNewTopic(false); setShowAuth(true); }} className="underline font-semibold">войти</button></p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Тег */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-2 block font-medium">Категория темы</label>
+                <div className="flex flex-wrap gap-2">
+                  {CHIPTUNING_TAGS.filter(t => t !== "Все").map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => setNewTopicTag(tag)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${newTopicTag === tag ? "border-orange-500/50 text-orange-400 bg-orange-500/10" : "border-border/50 text-muted-foreground hover:border-orange-500/30"}`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Заголовок */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Заголовок темы</label>
+                <input
+                  value={newTopicTitle}
+                  onChange={e => setNewTopicTitle(e.target.value)}
+                  placeholder="Например: Stage 1 на BMW 320d — стоит ли делать?"
+                  maxLength={100}
+                  className="w-full bg-secondary/50 border border-border/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-all"
+                />
+                <div className="text-right text-xs text-muted-foreground mt-1">{newTopicTitle.length}/100</div>
+              </div>
+
+              {/* Текст */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block font-medium">Описание / вопрос</label>
+                <textarea
+                  value={newTopicText}
+                  onChange={e => setNewTopicText(e.target.value)}
+                  placeholder="Опишите свой вопрос подробно: марка, двигатель, чего хотите добиться..."
+                  rows={4}
+                  className="w-full bg-secondary/50 border border-border/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setShowNewTopic(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold border border-border/50 text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={handleCreateTopic}
+                  disabled={!newTopicTitle.trim() || !newTopicText.trim()}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}
+                >
+                  <Icon name="Send" size={15} />
+                  Опубликовать тему
+                </button>
+              </div>
             </div>
           </div>
         </div>
