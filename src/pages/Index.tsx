@@ -36,6 +36,7 @@ const INITIAL_MESSAGES = [
 ];
 
 type View = "main" | "category" | "chat";
+type AuthMode = "login" | "register";
 
 export default function Index() {
   const [activeView, setActiveView] = useState<View>("main");
@@ -43,12 +44,41 @@ export default function Index() {
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
 
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [authName, setAuthName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  const handleAuth = () => {
+    setAuthError("");
+    if (authMode === "register") {
+      if (!authName.trim()) { setAuthError("Введите имя пользователя"); return; }
+      if (!authEmail.trim()) { setAuthError("Введите email"); return; }
+      if (authPassword.length < 6) { setAuthError("Пароль минимум 6 символов"); return; }
+      setCurrentUser(authName.trim());
+    } else {
+      if (!authEmail.trim()) { setAuthError("Введите email"); return; }
+      if (!authPassword.trim()) { setAuthError("Введите пароль"); return; }
+      setCurrentUser(authEmail.split("@")[0]);
+    }
+    setShowAuth(false);
+    setAuthEmail(""); setAuthPassword(""); setAuthName(""); setAuthError("");
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
+
   const handleSendMessage = () => {
     if (!chatMessage.trim()) return;
+    if (!currentUser) { setShowAuth(true); return; }
     setMessages(prev => [...prev, {
       id: prev.length + 1,
-      user: "Вы",
-      avatar: "Я",
+      user: currentUser,
+      avatar: currentUser[0].toUpperCase(),
       color: "#f97316",
       time: new Date().toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }),
       text: chatMessage.trim(),
@@ -96,9 +126,23 @@ export default function Index() {
               <span className="hidden sm:inline">Чат</span>
               <span className="w-2 h-2 rounded-full bg-green-500" style={{ boxShadow: "0 0 6px rgba(34,197,94,0.8)" }} />
             </button>
-            <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}>
-              Войти
-            </button>
+            {currentUser ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}>
+                    {currentUser[0].toUpperCase()}
+                  </div>
+                  <span className="text-orange-400 text-sm font-medium hidden sm:inline">{currentUser}</span>
+                </div>
+                <button onClick={handleLogout} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all" title="Выйти">
+                  <Icon name="LogOut" size={16} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => { setAuthMode("login"); setShowAuth(true); }} className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90" style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}>
+                Войти
+              </button>
+            )}
           </div>
         </div>
 
@@ -387,10 +431,12 @@ export default function Index() {
                     </button>
                   </div>
                 </div>
-                <p className="text-muted-foreground text-xs mt-2 text-center">
-                  Войдите, чтобы писать в чат •{" "}
-                  <button className="text-orange-400 hover:underline">Войти</button>
-                </p>
+                {!currentUser && (
+                  <p className="text-muted-foreground text-xs mt-2 text-center">
+                    Войдите, чтобы писать в чат •{" "}
+                    <button onClick={() => { setAuthMode("login"); setShowAuth(true); }} className="text-orange-400 hover:underline">Войти</button>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -444,6 +490,113 @@ export default function Index() {
       </nav>
 
       <div className="h-20 md:h-0" />
+
+      {/* Модальное окно авторизации */}
+      {showAuth && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowAuth(false); }}
+        >
+          <div className="w-full max-w-sm rounded-2xl p-6 animate-scale-in" style={{ background: "hsl(220,18%,11%)", border: "1px solid rgba(249,115,22,0.25)", boxShadow: "0 0 60px rgba(249,115,22,0.1)" }}>
+            {/* Шапка модалки */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="font-oswald text-2xl font-bold text-foreground">
+                  {authMode === "login" ? "Вход" : "Регистрация"}
+                </h2>
+                <p className="text-muted-foreground text-xs mt-0.5">
+                  {authMode === "login" ? "Войдите, чтобы участвовать" : "Создайте аккаунт бесплатно"}
+                </p>
+              </div>
+              <button onClick={() => setShowAuth(false)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
+                <Icon name="X" size={18} />
+              </button>
+            </div>
+
+            {/* Переключатель */}
+            <div className="flex rounded-xl overflow-hidden mb-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              {(["login", "register"] as AuthMode[]).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => { setAuthMode(mode); setAuthError(""); }}
+                  className="flex-1 py-2.5 text-sm font-semibold transition-all"
+                  style={authMode === mode ? { background: "linear-gradient(135deg, #f97316, #ea580c)", color: "#fff" } : { color: "hsl(220,10%,55%)" }}
+                >
+                  {mode === "login" ? "Войти" : "Регистрация"}
+                </button>
+              ))}
+            </div>
+
+            {/* Поля */}
+            <div className="space-y-3">
+              {authMode === "register" && (
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">Имя пользователя</label>
+                  <div className="relative">
+                    <Icon name="User" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      value={authName}
+                      onChange={e => setAuthName(e.target.value)}
+                      placeholder="МастерАвто"
+                      className="w-full bg-secondary/50 border border-border/50 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">Email</label>
+                <div className="relative">
+                  <Icon name="Mail" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="email"
+                    value={authEmail}
+                    onChange={e => setAuthEmail(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleAuth()}
+                    placeholder="example@mail.ru"
+                    className="w-full bg-secondary/50 border border-border/50 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">Пароль</label>
+                <div className="relative">
+                  <Icon name="Lock" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="password"
+                    value={authPassword}
+                    onChange={e => setAuthPassword(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleAuth()}
+                    placeholder={authMode === "register" ? "Минимум 6 символов" : "Ваш пароль"}
+                    className="w-full bg-secondary/50 border border-border/50 rounded-xl pl-9 pr-4 py-3 text-sm focus:outline-none focus:border-orange-500/50 transition-all"
+                  />
+                </div>
+              </div>
+
+              {authError && (
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-red-400" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  <Icon name="AlertCircle" size={14} />
+                  {authError}
+                </div>
+              )}
+
+              <button
+                onClick={handleAuth}
+                className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 mt-1"
+                style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}
+              >
+                {authMode === "login" ? "Войти на форум" : "Создать аккаунт"}
+              </button>
+
+              {authMode === "login" && (
+                <button className="w-full text-center text-xs text-muted-foreground hover:text-orange-400 transition-colors mt-1">
+                  Забыли пароль?
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
