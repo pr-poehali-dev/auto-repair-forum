@@ -17,7 +17,21 @@ const CATEGORIES = [
   { id: "electrics", name: "Электрика", icon: "Zap", topics: 1098, desc: "Проводка, диагностика, ЭБУ" },
   { id: "transmission", name: "КПП и АКПП", icon: "Cog", topics: 876, desc: "Ремонт коробки, замена масла" },
   { id: "tires", name: "Шины и диски", icon: "Circle", topics: 654, desc: "Выбор резины, балансировка" },
+  { id: "chiptuning", name: "Чип-тюнинг", icon: "Cpu", topics: 891, desc: "Прошивки, Stage 1/2/3, EGR, DPF" },
 ];
+
+const CHIPTUNING_TOPICS = [
+  { id: 101, title: "Stage 1 на BMW 320d F30 — стоит ли делать?", author: "ТурбоДмитрий", time: "10 мин назад", replies: 24, views: 487, hot: true, tag: "Stage 1" },
+  { id: 102, title: "Отключение EGR на VAZ Largus 1.6 — опыт и последствия", author: "Вован76", time: "45 мин назад", replies: 11, views: 213, hot: false, tag: "EGR" },
+  { id: 103, title: "DPF delete Toyota Land Cruiser 200 — где прошивают в СПб?", author: "Игорь_LC", time: "2 часа назад", replies: 38, views: 920, hot: true, tag: "DPF" },
+  { id: 104, title: "Какой чип-мастер в Москве делает Hyundai Tucson?", author: "АнтонА", time: "3 часа назад", replies: 7, views: 154, hot: false, tag: "Поиск мастера" },
+  { id: 105, title: "Stage 2 Kia Stinger 3.3T — прирост мощности и надёжность", author: "СтингерМэн", time: "5 часов назад", replies: 56, views: 1340, hot: true, tag: "Stage 2" },
+  { id: 106, title: "Отключение Adblue на Mercedes Sprinter — законно ли?", author: "ФермерПро", time: "1 день назад", replies: 19, views: 432, hot: false, tag: "Adblue" },
+  { id: 107, title: "Прошивка Ford Focus 3 1.6 Ti-VCT — что реально даёт?", author: "ФокусМен", time: "1 день назад", replies: 14, views: 278, hot: false, tag: "Stage 1" },
+  { id: 108, title: "Чип ВАЗ 2112 16кл — лучшие прошивки 2025 года", author: "МастерСаня", time: "2 дня назад", replies: 42, views: 876, hot: false, tag: "ВАЗ" },
+];
+
+const CHIPTUNING_TAGS = ["Все", "Stage 1", "Stage 2", "Stage 3", "EGR", "DPF", "Adblue", "Поиск мастера", "ВАЗ"];
 
 const RECENT_TOPICS = [
   { id: 1, title: "Стук в двигателе ВАЗ 2114 — что это?", author: "Михаил К.", time: "5 мин назад", replies: 12, views: 234, hot: true },
@@ -35,7 +49,7 @@ const INITIAL_MESSAGES = [
   { id: 5, user: "ТехникПро", avatar: "Т", color: "#a855f7", time: "14:31", text: "Всем рекомендую диагностику делать перед ремонтом, экономит деньги!" },
 ];
 
-type View = "main" | "category" | "chat";
+type View = "main" | "category" | "chat" | "chiptuning";
 type AuthMode = "login" | "register";
 
 export default function Index() {
@@ -44,6 +58,7 @@ export default function Index() {
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
 
+  const [activeTag, setActiveTag] = useState("Все");
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authName, setAuthName] = useState("");
@@ -150,6 +165,7 @@ export default function Index() {
           {([
             { label: "Главная", view: "main" as View, icon: "Home" },
             { label: "Темы", view: "category" as View, icon: "LayoutGrid" },
+            { label: "Чип-тюнинг", view: "chiptuning" as View, icon: "Cpu" },
             { label: "Чат", view: "chat" as View, icon: "MessageCircle" },
           ] as const).map(item => (
             <button
@@ -312,14 +328,24 @@ export default function Index() {
               <p className="text-muted-foreground text-xs font-medium uppercase tracking-widest mb-3">Типы работ</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {CATEGORIES.map(cat => (
-                  <div key={cat.id} className="glass-card rounded-xl p-5 hover-lift transition-all cursor-pointer group">
+                  <div
+                    key={cat.id}
+                    onClick={() => cat.id === "chiptuning" && setActiveView("chiptuning")}
+                    className={`glass-card rounded-xl p-5 hover-lift transition-all cursor-pointer group ${cat.id === "chiptuning" ? "border-orange-500/30" : ""}`}
+                    style={cat.id === "chiptuning" ? { border: "1px solid rgba(249,115,22,0.3)", background: "rgba(249,115,22,0.05)" } : {}}
+                  >
                     <div className="flex items-center gap-4">
                       <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all group-hover:scale-110" style={{ background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.2)" }}>
                         <Icon name={cat.icon as never} size={20} className="text-orange-400" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-foreground text-sm">{cat.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground text-sm">{cat.name}</span>
+                            {cat.id === "chiptuning" && (
+                              <span className="text-xs px-1.5 py-0.5 rounded-full font-medium" style={{ background: "rgba(249,115,22,0.2)", color: "#f97316" }}>Новое</span>
+                            )}
+                          </div>
                           <span className="text-muted-foreground text-xs">{cat.topics.toLocaleString("ru")} тем</span>
                         </div>
                         <p className="text-muted-foreground text-xs mt-0.5">{cat.desc}</p>
@@ -360,7 +386,104 @@ export default function Index() {
           </div>
         )}
 
-        {/* ЧАТ */}
+        {/* ЧИП-ТЮНИНГ */}
+        {activeView === "chiptuning" && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Заголовок */}
+            <div className="flex items-center gap-3">
+              <button onClick={() => setActiveView("main")} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Icon name="ArrowLeft" size={18} />
+              </button>
+              <div className="flex-1">
+                <h2 className="font-oswald text-2xl font-bold text-foreground flex items-center gap-2">
+                  <Icon name="Cpu" size={20} className="text-orange-400" />
+                  Чип-тюнинг
+                </h2>
+                <p className="text-muted-foreground text-xs mt-0.5">Прошивки, Stage 1/2/3, удаление EGR, DPF, Adblue</p>
+              </div>
+              <button className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 flex items-center gap-2" style={{ background: "linear-gradient(135deg, #f97316, #ea580c)" }}>
+                <Icon name="Plus" size={15} />
+                <span className="hidden sm:inline">Новая тема</span>
+              </button>
+            </div>
+
+            {/* Hero-баннер */}
+            <div className="rounded-2xl p-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, rgba(249,115,22,0.2) 0%, rgba(234,88,12,0.08) 100%)", border: "1px solid rgba(249,115,22,0.25)" }}>
+              <div className="grid grid-cols-3 gap-4 relative z-10">
+                {[
+                  { label: "Тем", value: "891", icon: "FileText" },
+                  { label: "Участников", value: "2 340", icon: "Users" },
+                  { label: "Ответов сегодня", value: "127", icon: "MessageSquare" },
+                ].map(s => (
+                  <div key={s.label} className="text-center">
+                    <Icon name={s.icon as never} size={18} className="text-orange-400 mx-auto mb-1" />
+                    <div className="font-oswald text-xl font-bold text-foreground">{s.value}</div>
+                    <div className="text-muted-foreground text-xs">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="absolute right-4 top-2 text-6xl opacity-10 select-none">⚡</div>
+            </div>
+
+            {/* Фильтр по тегам */}
+            <div className="flex flex-wrap gap-2">
+              {CHIPTUNING_TAGS.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => setActiveTag(tag)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${activeTag === tag ? "border-orange-500/50 text-orange-400 bg-orange-500/10" : "border-border/50 text-muted-foreground hover:border-orange-500/30 hover:text-foreground"}`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+
+            {/* Темы */}
+            <div className="space-y-2">
+              {CHIPTUNING_TOPICS.filter(t => activeTag === "Все" || t.tag === activeTag).map(topic => (
+                <div key={topic.id} className="glass-card rounded-xl p-4 hover-lift transition-all cursor-pointer group">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(249,115,22,0.15)", color: "#f97316", border: "1px solid rgba(249,115,22,0.25)" }}>
+                          {topic.tag}
+                        </span>
+                        {topic.hot && (
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)" }}>
+                            <Icon name="Flame" size={10} />
+                            Горячее
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-foreground text-sm font-medium group-hover:text-orange-300 transition-colors">{topic.title}</p>
+                      <div className="flex items-center gap-3 mt-2 text-muted-foreground text-xs">
+                        <span className="flex items-center gap-1"><Icon name="User" size={11} />{topic.author}</span>
+                        <span className="flex items-center gap-1"><Icon name="Clock" size={11} />{topic.time}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 text-xs text-muted-foreground shrink-0">
+                      <span className="flex items-center gap-1"><Icon name="MessageSquare" size={12} />{topic.replies}</span>
+                      <span className="flex items-center gap-1"><Icon name="Eye" size={12} />{topic.views}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {CHIPTUNING_TOPICS.filter(t => activeTag === "Все" || t.tag === activeTag).length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Icon name="Search" size={32} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Тем по этому тегу пока нет</p>
+                </div>
+              )}
+            </div>
+
+            <button className="w-full glass-card rounded-xl py-3 text-sm text-orange-400 hover:bg-orange-500/10 transition-all flex items-center justify-center gap-2">
+              <Icon name="Plus" size={16} />
+              Создать тему в Чип-тюнинге
+            </button>
+          </div>
+        )}
+
         {activeView === "chat" && (
           <div className="animate-fade-in">
             <div className="flex items-center gap-3 mb-4">
@@ -475,6 +598,7 @@ export default function Index() {
           {([
             { label: "Главная", view: "main" as View, icon: "Home" },
             { label: "Темы", view: "category" as View, icon: "LayoutGrid" },
+            { label: "Тюнинг", view: "chiptuning" as View, icon: "Cpu" },
             { label: "Чат", view: "chat" as View, icon: "MessageCircle" },
           ] as const).map(item => (
             <button
